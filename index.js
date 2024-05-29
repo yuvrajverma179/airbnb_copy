@@ -1,7 +1,8 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
-const Listing = require("./models/listing.js")
+const Listing = require("./models/listing.js");
+const Review = require("./models/reviews.js")
 const path = require("path");
 const methodOverride = require("method-override");
 const { ppid } = require("process");
@@ -107,6 +108,40 @@ app.delete("/listings/:id", wrapAsync(async (req, res) => {
     res.redirect("/listings");
 }));
 
+//Reviews
+//Post Route
+app.post("/listings/:id/reviews", async (req, res) => {
+    // console.log(req.body);
+    let listing = await Listing.findById(req.params.id);
+    // console.log(listing);
+    let newReview = new Review(req.body.review);
+
+    listing.reviews.push(newReview);
+
+    await newReview.save();
+    await listing.save();
+
+    console.log("New Review Saved");
+    res.redirect(`/listings/${listing._id}`);
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 app.all("*", (req, res, next) => {
     next(new ExpressError(404, "Error : Page Not Found !"));
 });
@@ -117,6 +152,7 @@ app.use((err, req, res, next) => {
     res.status(statusCode).render("error.ejs", { Message });
     // res.status(statusCode).send(Message);
 });
+
 
 // app.get("/testlisting", async (req, res) => {
 //     let sampleListing = new Listing({
