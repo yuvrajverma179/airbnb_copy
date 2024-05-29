@@ -9,7 +9,7 @@ const { ppid } = require("process");
 const ejsMate = require("ejs-mate");
 const wrapAsync = require("./utils/wrapAsync.js");
 const ExpressError = require("./utils/ExpressError.js");
-const {listingSchema} = require("./schema.js");
+const {listingSchema, reviewSchema} = require("./schema.js");
 
 app.listen(8080, () => {
     console.log("server is listening at port 8080");
@@ -29,6 +29,22 @@ const validateListing = (req, res, next) => {
         let errMsg = error.details.map((el) => el.message).join(",");
         throw new ExpressError(400, errMsg);
     } else {
+        next();
+    };
+};
+
+const validateReview = (req, res, next) => {
+    // console.log(req.body.rating);
+    // let result = reviewSchema.validate(req.body);
+    // console.log(result);
+    let {error} = reviewSchema.validate(req.body);
+    if(error) {
+        // console.log("error called");
+        // console.log(error);
+        let errMsg = error.details.map((el) => el.message).join(",");
+        throw new ExpressError(400, errMsg);
+    } else {
+        console.log("next called");
         next();
     };
 };
@@ -69,7 +85,7 @@ app.get("/listings/new", (req, res) => {
 //Show Route
 app.get("/listings/:id", wrapAsync(async (req, res) => {
     let {id} = req.params;
-    const listing = await Listing.findById(id);
+    const listing = await Listing.findById(id).populate("reviews");
     res.render("./listings/show.ejs", {listing});
 }));
 
@@ -110,7 +126,7 @@ app.delete("/listings/:id", wrapAsync(async (req, res) => {
 
 //Reviews
 //Post Route
-app.post("/listings/:id/reviews", async (req, res) => {
+app.post("/listings/:id/reviews", validateReview ,wrapAsync (async (req, res) => {
     // console.log(req.body);
     let listing = await Listing.findById(req.params.id);
     // console.log(listing);
@@ -123,16 +139,7 @@ app.post("/listings/:id/reviews", async (req, res) => {
 
     console.log("New Review Saved");
     res.redirect(`/listings/${listing._id}`);
-})
-
-
-
-
-
-
-
-
-
+}));
 
 
 
